@@ -32,6 +32,9 @@ $rollout = Get-Content $pathToRollout | ConvertFrom-Json;
 $servicemodel = Get-Content $pathtoServiceModel | ConvertFrom-Json;
 
 #TODO: make tag changes here based on user inputs!!!!
+# ex:
+# $rollout.RolloutMetadata.Name = RolloutMetadataName; #where variable RolloutMetadataName is an argument passed into the script
+# and processed in the PARAM section
 #
 #
 #
