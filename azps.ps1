@@ -145,8 +145,6 @@ $rolloutParams = Get-Content $pathToRolloutParams | ConvertFrom-Json;
 #(Get-Content $servicemodel).replace("{{Extensions.Version}}", $Extensions_Version) | Set-Content $rolloutParams 
 #(Get-Content $servicemodel).replace("{{Extensions.ConnectionProperties.Authentication.Reference.Parameters.SecretId}}", $Extensions_ConnectionProperties_Authentication_Reference_Parameters_SecretId) | Set-Content $rolloutParams 
 
-
-
 $rollout | ConvertTo-Json | set-content $pathToRollout;
 $servicemodel | ConvertTo-Json | set-content $pathtoServiceModel;
 $rolloutParams | ConvertTo-Json | set-content $pathToRolloutParams;
