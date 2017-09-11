@@ -52,7 +52,6 @@ Param(
    [string]$Extensions_Type,
    [string]$Extensions_Version,
    [string]$Extensions_ConnectionProperties_Authentication_Reference_Parameters_SecretId
-   
 )
 $pwd = "$(pwd)";
 Write-Host "Executing pwd -- $(pwd)";
@@ -64,8 +63,8 @@ $SAKey = Get-AzureRmStorageAccountKey -ResourceGroupName "$RGname" -AccountName 
 $Context = New-AzureStorageContext -StorageAccountName $SAname -StorageAccountKey $SAKey.Value[0];
 
 #establish local space to edit files in - because this script runs on the agent, we get the directory of the machine running the agent
-$pwd = "$(pwd)";
-$DestinationFolder = $pwd + "\workspace";
+$DestinationFolder = New-Item "$pwd\workspace\" -type directory -force;
+
 #List all blobs in a container.
 $blobs = Get-AzureStorageBlob -Container $ContainerName -Context $Context;
 #Download blobs from a container.
@@ -75,9 +74,9 @@ $blobs | Get-AzureStorageBlobContent -Destination $DestinationFolder -Context $C
 
 ##################################################################################################
 #Now we edit the files locally
-$pathToRollout = $DestinationFolder + "rolloutspec_multi-region.json";
-$pathtoServiceModel = $DestinationFolder + "servicemodel.json";
-$pathToRolloutParams = $DestinationFolder + "parameters\sfg-app-rollout-parameters.json";
+$pathToRollout = $DestinationFolder + "\rolloutspec_multi-region.json";
+$pathtoServiceModel = $DestinationFolder + "\servicemodel.json";
+$pathToRolloutParams = $DestinationFolder + "\parameters\sfg-app-rollout-parameters.json";
 
 $rollout = Get-Content $pathToRollout | ConvertFrom-Json;
 $servicemodel = Get-Content $pathtoServiceModel | ConvertFrom-Json;
