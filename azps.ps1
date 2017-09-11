@@ -63,7 +63,7 @@ $SAKey = Get-AzureRmStorageAccountKey -ResourceGroupName "$RGname" -AccountName 
 $Context = New-AzureStorageContext -StorageAccountName $SAname -StorageAccountKey $SAKey.Value[0];
 
 #establish local space to edit files in - because this script runs on the agent, we get the directory of the machine running the agent
-$DestinationFolder = New-Item "$pwd\workspace\" -type directory -force;
+$DestinationFolder = "$pwd\workspace";
 
 #List all blobs in a container.
 $blobs = Get-AzureStorageBlob -Container $ContainerName -Context $Context;
@@ -74,9 +74,9 @@ $blobs | Get-AzureStorageBlobContent -Destination $DestinationFolder -Context $C
 
 ##################################################################################################
 #Now we edit the files locally
-$pathToRollout = $DestinationFolder + "\rolloutspec_multi-region.json";
-$pathtoServiceModel = $DestinationFolder + "\servicemodel.json";
-$pathToRolloutParams = $DestinationFolder + "\parameters\sfg-app-rollout-parameters.json";
+$pathToRollout = $DestinationFolder + "\deploy-v1\rolloutspec_multi-region.json";
+$pathtoServiceModel = $DestinationFolder + "\deploy-v1\servicemodel.json";
+$pathToRolloutParams = $DestinationFolder + "\deploy-v1\parameters\sfg-app-rollout-parameters.json";
 
 $rollout = Get-Content $pathToRollout | ConvertFrom-Json;
 $servicemodel = Get-Content $pathtoServiceModel | ConvertFrom-Json;
@@ -149,6 +149,6 @@ $rolloutParams | ConvertTo-Json | set-content $pathToRolloutParams;
 
 ##################################################################################################
 #Now we upload the edited files back to storage account
-#  Make sure to get the contents of the folder, not the folder
-$DestinationFolder = $DestinationFolder + '\*'
-Get-ChildItem -Path $DestinationFolder | Set-AzureStorageBlobContent -Container $ContainerName
+#  but we need to be in the workspace directory so that deploy-v1 is the uploaded folder
+$stuff = (ls $DestinationFolder -File -Recurse)
+Set-AzureStorageBlobContent -Container $ContainerName -Context $Context -File $stuff
