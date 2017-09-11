@@ -2,7 +2,6 @@ Param(
    [string]$RGname,
    [string]$SAname,
    [string]$ContainerName,
-   [string]$DestinationFolder,
    [string]$RollOutMetadata_Name,
    [string]$RollOutMetadata_BuildSource_Parameters_VersionFile,
    [string]$RollOutMetadata_Notification_Email_To,
@@ -55,18 +54,18 @@ Param(
    [string]$Extensions_ConnectionProperties_Authentication_Reference_Parameters_SecretId
    
 )
-Write-Host "Executing pwd";
-$pwd = pwd;
-Write-Host $pwd;
-Write-Host "Executing whoami";
-$who = whoami;
-Write-Host $who;
+$pwd = "$(pwd)";
+Write-Host "Executing pwd -- $(pwd)";
+Write-Host "Executing whoami -- $(whoami)";
 
 Write-Host "resource group is $RGname";
 Write-Host "storage account is $SAname";
 $SAKey = Get-AzureRmStorageAccountKey -ResourceGroupName "$RGname" -AccountName "$SAname";
 $Context = New-AzureStorageContext -StorageAccountName $SAname -StorageAccountKey $SAKey.Value[0];
 
+#establish local space to edit files in - because this script runs on the agent, we get the directory of the machine running the agent
+$pwd = "$(pwd)";
+$DestinationFolder = $pwd + "\workspace";
 #List all blobs in a container.
 $blobs = Get-AzureStorageBlob -Container $ContainerName -Context $Context;
 #Download blobs from a container.
@@ -78,7 +77,7 @@ $blobs | Get-AzureStorageBlobContent -Destination $DestinationFolder -Context $C
 #Now we edit the files locally
 $pathToRollout = $DestinationFolder + "rolloutspec_multi-region.json";
 $pathtoServiceModel = $DestinationFolder + "servicemodel.json";
-$pathToRolloutParams = $DestinationFolder + "parameters/sfg-app-rollout-parameters.json";
+$pathToRolloutParams = $DestinationFolder + "parameters\sfg-app-rollout-parameters.json";
 
 $rollout = Get-Content $pathToRollout | ConvertFrom-Json;
 $servicemodel = Get-Content $pathtoServiceModel | ConvertFrom-Json;
@@ -151,3 +150,6 @@ $rolloutParams | ConvertTo-Json | set-content $pathToRolloutParams;
 
 ##################################################################################################
 #Now we upload the edited files back to storage account
+#  Make sure to get the contents of the folder, not the folder
+$DestinationFolder = $DestinationFolder + '\*'
+Get-ChildItem -Path $DestinationFolder | Set-AzureStorageBlobContent -Container $ContainerName
