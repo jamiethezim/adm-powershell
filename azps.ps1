@@ -2,6 +2,7 @@ Param(
    [string]$RGname,
    [string]$SAname,
    [string]$ContainerName,
+   [string]$SubFolderName,
    [string]$RollOutMetadata_Name,
    [string]$RollOutMetadata_BuildSource_Parameters_VersionFile,
    [string]$RollOutMetadata_Notification_Email_To,
@@ -64,19 +65,19 @@ $Context = New-AzureStorageContext -StorageAccountName $SAname -StorageAccountKe
 
 #establish local space to edit files in - because this script runs on the agent, we get the directory of the machine running the agent
 $DestinationFolder = "$pwd\workspace";
-
-#List all blobs in a container.
-$blobs = Get-AzureStorageBlob -Container $ContainerName -Context $Context;
-#Download blobs from a container.
 New-Item -Path $DestinationFolder -ItemType Directory -Force;
-$blobs | Get-AzureStorageBlobContent -Destination $DestinationFolder -Context $Context;
+#Download only the file blobs we want
+Get-AzureStorageBlobContent -Container $ContainerName -Destination $DestinationFolder -Context $Context -Blob "deploy-v1\rolloutspec_multi-region.json"
+Get-AzureStorageBlobContent -Container $ContainerName -Destination $DestinationFolder -Context $Context -Blob "deploy-v1\servicemodel.json"
+Get-AzureStorageBlobContent -Container $ContainerName -Destination $DestinationFolder -Context $Context -Blob "deploy-v1\parameters\sfg-app-rollout-parameters.json"
+Get-ChildItem $DestinationFolder;
 
 
 ##################################################################################################
 #Now we edit the files locally
-$pathToRollout = $DestinationFolder + "\deploy-v1\rolloutspec_multi-region.json";
-$pathtoServiceModel = $DestinationFolder + "\deploy-v1\servicemodel.json";
-$pathToRolloutParams = $DestinationFolder + "\deploy-v1\parameters\sfg-app-rollout-parameters.json";
+$pathToRollout = $DestinationFolder + "\$SubFolderName\rolloutspec_multi-region.json";
+$pathtoServiceModel = $DestinationFolder + "\$SubFolderName\servicemodel.json";
+$pathToRolloutParams = $DestinationFolder + "\$SubFolderName\parameters\sfg-app-rollout-parameters.json";
 
 $rollout = Get-Content $pathToRollout | ConvertFrom-Json;
 $servicemodel = Get-Content $pathtoServiceModel | ConvertFrom-Json;
@@ -85,15 +86,15 @@ $rolloutParams = Get-Content $pathToRolloutParams | ConvertFrom-Json;
 #: make tag changes here based on user inputs!!!
 
 ######### rolloutspec_multi-region.json
-#(Get-Content $pathToRollout).replace("{{RollOutMetadata.Name}}", $RollOutMetadata_Name) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{RollOutMetadata.BuildSource.Parameters.VersionFile}}", $RollOutMetadata_BuildSource_Parameters_VersionFile) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{RollOutMetadata.Notification.Email.To}}", $RollOutMetadata_Notification_Email_To) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group1.Name}}", $OrchestratedSteps_RolloutCheck_Group1_Name) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group1.TargetName}}", $OrchestratedSteps_RolloutCheck_Group1_TargetName) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group2.Name}}", $OrchestratedSteps_RolloutCheck_Group2_Name) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group2.TargetName}}", $OrchestratedSteps_RolloutCheck_Group2_TargetName) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group3.Name}}", $OrchestratedSteps_RolloutCheck_Group3_Name) | Set-Content $pathToRollout 
-#(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group3.TargetName}}", $OrchestratedSteps_RolloutCheck_Group3_TargetName) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{RollOutMetadata.Name}}", $RollOutMetadata_Name) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{RollOutMetadata.BuildSource.Parameters.VersionFile}}", $RollOutMetadata_BuildSource_Parameters_VersionFile) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{RollOutMetadata.Notification.Email.To}}", $RollOutMetadata_Notification_Email_To) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group1.Name}}", $OrchestratedSteps_RolloutCheck_Group1_Name) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group1.TargetName}}", $OrchestratedSteps_RolloutCheck_Group1_TargetName) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group2.Name}}", $OrchestratedSteps_RolloutCheck_Group2_Name) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group2.TargetName}}", $OrchestratedSteps_RolloutCheck_Group2_TargetName) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group3.Name}}", $OrchestratedSteps_RolloutCheck_Group3_Name) | Set-Content $pathToRollout 
+(Get-Content $pathToRollout).replace("{{OrchestratedSteps.RolloutCheck.Group3.TargetName}}", $OrchestratedSteps_RolloutCheck_Group3_TargetName) | Set-Content $pathToRollout 
 
 ######### servicemodel.json
 #(Get-Content $servicemodel).replace("{{ServiceMetadata.ServiceGroup}}", $ServiceMetadata_ServiceGroup) | Set-Content $servicemodel 
@@ -150,5 +151,8 @@ $rolloutParams | ConvertTo-Json | set-content $pathToRolloutParams;
 ##################################################################################################
 #Now we upload the edited files back to storage account
 #  but we need to be in the workspace directory so that deploy-v1 is the uploaded folder
-$stuff = (ls $DestinationFolder -File -Recurse)
-Set-AzureStorageBlobContent -Container $ContainerName -Context $Context -File $stuff
+#ls $DestinationFolder -File -Recurse | Set-AzureStorageBlobContent -Container $ContainerName -Context $Context
+
+Set-AzureStorageBlobContent -Container $ContainerName -File $pathToRollout -Context $Context -Blob "$SubFolderName\rolloutspec_multi-region.json" -Force
+Set-AzureStorageBlobContent -Container $ContainerName -File $pathtoServiceModel -Context $Context  -Blob "$SubFolderName\servicemodel.json" -Force
+Set-AzureStorageBlobContent -Container $ContainerName -File $pathToRolloutParams -Context $Context  -Blob "$SubFolderName\parameters\sfg-app-rollout-parameters.json" -Force
